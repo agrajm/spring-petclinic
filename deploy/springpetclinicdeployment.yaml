@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic
+  labels:
+    app: petclinic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: petclinic
+  template:
+    metadata:
+      labels:
+        app: petclinic
+    spec:
+      containers:
+      - name: petclinic
+        image: agraj.azurecr.io/spring/petclinic:1.0
+        env:
+          - name: MYSQL_URL
+            valueFrom:
+              secretKeyRef:
+                name: mysql-url-secret
+                key: MYSQL_URL
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-user-secret
+                key: MYSQL_USER
+          - name: MYSQL_PASS
+            valueFrom:
+              secretKeyRef:
+                name: mysql-pass-secret
+                key: MYSQL_PASS
+          - name: SPRING_PROFILES_ACTIVE    # Enables the MySQL integration
+            value: "mysql"
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "springpetkv2021am"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-service
+spec:
+  selector:
+    app: petclinic
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
