@@ -93,6 +93,25 @@ az network private-endpoint create \
     --group-id mysqlServer \
     --connection-name myConnection
 
+az network private-dns zone create --resource-group $ResourceGroup \
+   --name  "privatelink.mysql.database.azure.com"
+
+az network private-dns link vnet create --resource-group $ResourceGroup \
+   --zone-name  "privatelink.mysql.database.azure.com"\
+   --name MyDNSLink \
+   --virtual-network k8s-vnet \
+   --registration-enabled false
+
+# Query for the network interface ID
+networkInterfaceId=$(az network private-endpoint show --name mysqlPrivateEndpoint --resource-group $ResourceGroup --query 'networkInterfaces[0].id' -o tsv)
+
+az resource show --ids $networkInterfaceId --api-version 2019-04-01 -o json
+# Copy the content for privateIPAddress and FQDN matching the Azure database for MySQL name
+
+# Create DNS records
+az network private-dns record-set a create --name $ServerName --zone-name privatelink.mysql.database.azure.com --resource-group $ResourceGroup
+az network private-dns record-set a add-record --record-set-name $ServerName --zone-name privatelink.mysql.database.azure.com --resource-group $ResourceGroup -a 172.10.2.4
+
 # Put the DB secrets in Key Vault
 KeyVaultName="springpetkv2021am"
 az keyvault create \

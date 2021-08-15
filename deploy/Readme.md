@@ -72,5 +72,7 @@ az keyvault set-policy --name $KeyVaultName --secret-permissions get --spn $KVSP
 
 ## Attach ACR
 To be able to pull from your private ACR repo you must 'attach' the  repo to the AKS cluster
+```
 az aks update -n $AKSClusterName -g $ResourceGroup --attach-acr agraj
+```
 
